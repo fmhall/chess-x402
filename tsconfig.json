@@ -1,6 +1,7 @@
 {
   "compilerOptions": {
     "types": ["bun"],
+    "skipLibCheck": true
   },
   "exclude": ["node_modules"]
 }
