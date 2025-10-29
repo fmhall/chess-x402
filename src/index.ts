@@ -60,10 +60,10 @@ app.use(
           outputSchema: {
             type: "object",
             properties: { 
-              success: { type: "boolean" },
-              evaluation: { type: "number" },
-              bestmove: { type: "string" },
-              mate: { type: "number", required: false },
+              success: { type: "boolean", description: "Whether the request was successful" },
+              evaluation: { type: "number", description: "The evaluation of the position" },
+              bestmove: { type: "string", description: "The best move for the position" },
+              mate: { type: "number", description: "The number of moves to mate the opponent (can be null)" },
             }
           }
         }
