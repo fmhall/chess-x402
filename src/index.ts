@@ -43,8 +43,8 @@ app.use(
         config: {
           discoverable: true, // make your endpoint discoverable
           description: "Get stockfish analysis for a given FEN",
-          method: "GET",
           inputSchema: { 
+            method: "GET",
             queryParams: { 
               fen: JSON.stringify({ 
                 type: "string", 
