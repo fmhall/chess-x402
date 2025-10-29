@@ -48,12 +48,12 @@ app.use(
               fen: { 
                 type: "string", 
                 description: "FEN string (e.g., 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')", 
-                required: true
+                required: "true"
               },
               depth: { 
                 type: "string", 
                 description: "Depth of the analysis (1-30, default 10)", 
-                required: false
+                required: "false"
               }
             }
           },
