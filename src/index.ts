@@ -5,13 +5,15 @@ import { paymentMiddleware, Network, Resource, SolanaAddress } from "x402-hono";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
+import { coinbase } from "facilitators";
+
 config();
 
-const facilitatorUrl = process.env.FACILITATOR_URL as Resource;
 const payTo = process.env.ADDRESS as `0x${string}` | SolanaAddress;
 const network = process.env.NETWORK as Network;
 
-if (!facilitatorUrl || !payTo || !network) {
+
+if (!payTo || !network) {
   console.error("Missing required environment variables");
   process.exit(1);
 }
@@ -49,9 +51,7 @@ app.use(
         }
       },
     },
-    {
-      url: facilitatorUrl,
-    },
+    coinbase,
   ),
 );
 
