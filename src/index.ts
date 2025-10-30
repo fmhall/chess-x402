@@ -1,7 +1,7 @@
 import { config } from "dotenv";
 import { Hono } from "hono";
 import { serveStatic } from 'hono/bun'
-import { paymentMiddleware, Network, Resource, SolanaAddress } from "x402-hono";
+import { paymentMiddleware, Network } from "x402-hono";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
@@ -9,7 +9,7 @@ import { coinbase } from "facilitators";
 
 config();
 
-const payTo = process.env.ADDRESS as `0x${string}` | SolanaAddress;
+const payTo = process.env.ADDRESS as `0x${string}`;
 const network = process.env.NETWORK as Network;
 
 
