@@ -1,7 +1,7 @@
-import { z, type ZodObject, type ZodRawShape, type ZodType } from "zod";
+import * as z from "zod";
 import type { HTTPRequestStructure } from "x402/types";
 
-export function inputSchemaToX402(inputSchema: ZodObject<ZodRawShape>): HTTPRequestStructure {
+export function inputSchemaToX402(inputSchema: z.ZodObject<z.ZodRawShape>): HTTPRequestStructure {
   const jsonSchema = z.toJSONSchema(inputSchema);
 
   // Convert JSON Schema properties to Record<string, string> for x402
@@ -28,6 +28,6 @@ export function inputSchemaToX402(inputSchema: ZodObject<ZodRawShape>): HTTPRequ
   };
 }
 
-export function zodToJsonSchema(schema: ZodType) {
+export function zodToJsonSchema(schema: z.ZodType) {
   return z.toJSONSchema(schema);
 }
