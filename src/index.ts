@@ -23,18 +23,12 @@ const inputSchema = z.object({
 });
 
 // Validate the response data with zod
-const responseSchema = z.discriminatedUnion('success', [
-  z.object({
-    success: z.literal(true),
-    evaluation: z.number(),
-    bestmove: z.string(),
-    mate: z.number().nullable(),
-  }),
-  z.object({
-    success: z.literal(false),
-    error: z.string(),
-  }),
-]);
+const responseSchema = z.object({
+  success: z.literal(true),
+  evaluation: z.number(),
+  bestmove: z.string(),
+  mate: z.number().nullable(),
+});
 
 const app = new Hono();
 
