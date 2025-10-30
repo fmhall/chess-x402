@@ -1,19 +1,19 @@
 import { config } from "dotenv";
 import { Hono } from "hono";
 import { serveStatic } from 'hono/bun'
-import { paymentMiddleware, Network } from "x402-hono";
+import { paymentMiddleware, Network, Resource } from "x402-hono";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
-import { coinbase } from "facilitators";
 
 config();
 
+const facilitatorUrl = process.env.FACILITATOR_URL as Resource;
 const payTo = process.env.ADDRESS as `0x${string}`;
 const network = process.env.NETWORK as Network;
 
 
-if (!payTo || !network) {
+if (!payTo || !network || !facilitatorUrl) {
   console.error("Missing required environment variables");
   process.exit(1);
 }
@@ -51,7 +51,9 @@ app.use(
         }
       },
     },
-    coinbase,
+    {
+      url: facilitatorUrl,
+    },
   ),
 );
 
