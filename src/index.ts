@@ -5,6 +5,7 @@ import { paymentMiddleware, Network, Resource } from "x402-hono";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
+import { coinbase } from "facilitators";
 
 config();
 
@@ -51,9 +52,7 @@ app.use(
         }
       },
     },
-    {
-      url: facilitatorUrl,
-    },
+    coinbase,
   ),
 );
 

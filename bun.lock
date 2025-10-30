@@ -6,7 +6,7 @@
       "dependencies": {
         "@hono/zod-validator": "^0.7.4",
         "dotenv": "^17.2.3",
-        "facilitators": "^0.0.5",
+        "facilitators": "^0.0.6",
         "hono": "^4.10.3",
         "x402": "^0.7.0",
         "x402-hono": "^0.7.0",
@@ -441,7 +441,7 @@
 
     "eyes": ["eyes@0.1.8", "", {}, "sha512-GipyPsXO1anza0AOZdy69Im7hGFCNB7Y/NGjDlZGJ3GJJLtwNSb2vrzYrTYJRrRloVx7pl+bhUaTB8yiccPvFQ=="],
 
-    "facilitators": ["facilitators@0.0.5", "", { "dependencies": { "@coinbase/x402": "^0.6.6", "@thirdweb-dev/nexus": "^0.1.0", "x402": "^0.6.6" } }, "sha512-7K5Tp/HLL2kz6y8AN8PlpdhZPhg7tlSVlws91fCt0nZHzKZ28eYMmzBjENjZug2GWxhMQAPKhryr6CtXJOU7Dg=="],
+    "facilitators": ["facilitators@0.0.6", "", { "dependencies": { "@coinbase/x402": "^0.6.6", "@thirdweb-dev/nexus": "^0.1.0", "x402": "^0.6.6" } }, "sha512-rJUE04kSWnC4fb51WOv1CQNT1CPy0C46tyxAqZqJAU5yaWJlcVp8r4c2KixNPIOs5hOnfW6OljrSPUWm+FDQFg=="],
 
     "fast-deep-equal": ["fast-deep-equal@3.1.3", "", {}, "sha512-f3qQ9oQy9j2AhBe/H9VC91wLmKBCCU/gDOnKNAYG5hswO7BLKj09Hc5HYNz9cGI++xlpDCIgDaitVs03ATR84Q=="],
 
