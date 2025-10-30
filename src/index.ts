@@ -4,6 +4,7 @@ import { serveStatic } from 'hono/bun'
 import { paymentMiddleware, Network, Resource, SolanaAddress } from "x402-hono";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
+import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
 config();
 
 const facilitatorUrl = process.env.FACILITATOR_URL as Resource;
@@ -14,6 +15,12 @@ if (!facilitatorUrl || !payTo || !network) {
   console.error("Missing required environment variables");
   process.exit(1);
 }
+
+
+const inputSchema = z.object({
+  fen: z.string(),
+  depth: z.number().optional().default(10),
+});
 
 // Validate the response data with zod
 const responseSchema = z.discriminatedUnion('success', [
@@ -43,30 +50,8 @@ app.use(
         config: {
           discoverable: true, // make your endpoint discoverable
           description: "Get stockfish analysis for a given FEN",
-          inputSchema: { 
-            method: "GET",
-            queryParams: { 
-              fen: JSON.stringify({ 
-                type: "string", 
-                description: "FEN string (e.g., 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1')", 
-                required: "true"
-            }),
-              depth: JSON.stringify(  { 
-                type: "string", 
-                description: "Depth of the analysis (1-30, default 10)", 
-                required: "false"
-              })
-            }
-          },
-          outputSchema: {
-            type: "object",
-            properties: { 
-              success: { type: "boolean", description: "Whether the request was successful" },
-              evaluation: { type: "number", description: "The evaluation of the position" },
-              bestmove: { type: "string", description: "The best move for the position" },
-              mate: { type: "number", description: "The number of moves to mate the opponent (can be null)" },
-            }
-          }
+          inputSchema: inputSchemaToX402(inputSchema),  
+          outputSchema: zodToJsonSchema(responseSchema),
         }
       },
     },
