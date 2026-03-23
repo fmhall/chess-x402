@@ -7,6 +7,7 @@ import { evmPaywall } from "@x402/paywall/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
+import { bazaarResourceServerExtension } from "@x402/extensions";
 
 const app = new Hono();
 
@@ -43,6 +44,24 @@ app.use(
   paymentMiddleware(
     {
       "GET /best-move": {
+        extensions: {
+          bazaar: {
+            schema: {
+              properties: {
+                input: {
+                  properties: {
+                    queryParams: inputSchema,
+                  },
+                },
+                output: {
+                  properties: {
+                    example: responseSchema,
+                  },
+                },
+              },
+            },
+          },
+        },
         accepts: [
           {
             scheme: "exact",
@@ -116,24 +135,6 @@ app.get("/openapi.json", c => {
             protocols: ["x402"],
             pricingMode: "fixed",
             price: "$0.001",
-          },
-          extensions: {
-            bazaar: {
-              schema: {
-                properties: {
-                  input: {
-                    properties: {
-                      queryParams: inputJsonSchema,
-                    },
-                  },
-                  output: {
-                    properties: {
-                      example: outputJsonSchema,
-                    },
-                  },
-                },
-              },
-            },
           },
           parameters: [
             {
