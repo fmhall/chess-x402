@@ -75,6 +75,9 @@ app.get("/openapi.json", c => {
   const inputJsonSchema = z.toJSONSchema(inputSchema);
   const outputJsonSchema = z.toJSONSchema(responseSchema);
 
+  console.log(inputJsonSchema);
+  console.log(outputJsonSchema);
+
   return c.json({
     openapi: "3.1.0",
     info: {
