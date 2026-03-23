@@ -1,4 +1,3 @@
-import { config } from "dotenv";
 import { Hono } from "hono";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { HTTPFacilitatorClient } from "@x402/core/server";
@@ -7,27 +6,21 @@ import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
 
-config();
-
-const facilitatorUrl = process.env.FACILITATOR_URL;
-const payTo = process.env.ADDRESS as `0x${string}`;
-const networkEnv = process.env.NETWORK;
-
-function normalizeNetwork(value: string | undefined): `${string}:${string}` | undefined {
-  if (!value) return undefined;
+function normalizeNetwork(value: string | undefined): `${string}:${string}` {
+  if (!value) throw new Error("NETWORK env var is required");
   if (value.includes(":")) return value as `${string}:${string}`;
   if (value === "base-sepolia") return "eip155:84532";
   if (value === "base-mainnet") return "eip155:8453";
-  return undefined;
+  throw new Error(`Unsupported NETWORK value: ${value}`);
 }
 
-const network = normalizeNetwork(networkEnv);
+const facilitatorUrl = process.env.FACILITATOR_URL;
+const payTo = process.env.ADDRESS as `0x${string}`;
 
+if (!facilitatorUrl) throw new Error("FACILITATOR_URL env var is required");
+if (!payTo) throw new Error("ADDRESS env var is required");
 
-if (!payTo || !network || !facilitatorUrl) {
-  console.error("Missing required environment variables");
-  process.exit(1);
-}
+const network = normalizeNetwork(process.env.NETWORK);
 
 
 const inputSchema = z.object({
