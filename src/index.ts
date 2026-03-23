@@ -1,7 +1,7 @@
 import { Hono } from "hono";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { HTTPFacilitatorClient } from "@x402/core/server";
-import { createFacilitatorConfig } from "@coinbase/x402";
+import { facilitator } from "@coinbase/x402";
 import { createPaywall } from "@x402/paywall";
 import { evmPaywall } from "@x402/paywall/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
@@ -16,9 +16,9 @@ if (!payTo) {
   throw new Error("Missing required environment variable: ADDRESS");
 }
 
-const facilitator = new HTTPFacilitatorClient(createFacilitatorConfig());
+const facilitatorClient = new HTTPFacilitatorClient(facilitator);
 
-const resourceServer = new x402ResourceServer(facilitator)
+const resourceServer = new x402ResourceServer(facilitatorClient)
   .register("eip155:8453", new ExactEvmScheme());
 
 const paywall = createPaywall()
