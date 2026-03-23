@@ -50,12 +50,12 @@ app.use(
               properties: {
                 input: {
                   properties: {
-                    queryParams: inputSchema,
+                    queryParams: inputSchema.toJSONSchema(),
                   },
                 },
                 output: {
                   properties: {
-                    example: responseSchema,
+                    example: responseSchema.toJSONSchema(),
                   },
                 },
               },
