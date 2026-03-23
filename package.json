@@ -2,6 +2,7 @@
   "name": "hono",
   "type": "module",
   "dependencies": {
+    "@coinbase/x402": "^2.1.0",
     "@hono/zod-validator": "^0.7.6",
     "@x402/core": "^2.8.0",
     "@x402/evm": "^2.8.0",
