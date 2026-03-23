@@ -1,17 +1,27 @@
 import { config } from "dotenv";
 import { Hono } from "hono";
-import { serveStatic } from 'hono/bun'
-import { paymentMiddleware, Network, Resource } from "x402-hono";
+import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
+import { HTTPFacilitatorClient } from "@x402/core/server";
+import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
-import { coinbase } from "facilitators";
 
 config();
 
-const facilitatorUrl = process.env.FACILITATOR_URL as Resource;
+const facilitatorUrl = process.env.FACILITATOR_URL;
 const payTo = process.env.ADDRESS as `0x${string}`;
-const network = process.env.NETWORK as Network;
+const networkEnv = process.env.NETWORK;
+
+function normalizeNetwork(value: string | undefined): `${string}:${string}` | undefined {
+  if (!value) return undefined;
+  if (value.includes(":")) return value as `${string}:${string}`;
+  if (value === "base-sepolia") return "eip155:84532";
+  if (value === "base-mainnet") return "eip155:8453";
+  return undefined;
+}
+
+const network = normalizeNetwork(networkEnv);
 
 
 if (!payTo || !network || !facilitatorUrl) {
@@ -39,26 +49,157 @@ console.log("Server is running");
 
 app.use(
   paymentMiddleware(
-    payTo,
     {
-      "/best-move": {
-        price: "$0.001",
-        network,
-        config: {
-          discoverable: true, // make your endpoint discoverable
-          description: "Get stockfish analysis for a given FEN",
-          inputSchema: inputSchemaToX402(inputSchema),  
-          outputSchema: zodToJsonSchema(responseSchema),
-        }
+      "GET /best-move": {
+        accepts: [
+          {
+            scheme: "exact",
+            price: "$0.001",
+            network,
+            payTo,
+          },
+        ],
+        description: "Get stockfish analysis for a given FEN",
+        mimeType: "application/json",
+        extensions: {
+          bazaar: {
+            discoverable: true,
+            category: "utilities",
+            tags: ["chess", "stockfish", "analysis"],
+            inputSchema: inputSchemaToX402(inputSchema),
+            outputSchema: zodToJsonSchema(responseSchema),
+            schema: {
+              properties: {
+                input: {
+                  properties: {
+                    queryParams: zodToJsonSchema(inputSchema),
+                  },
+                },
+                output: {
+                  properties: {
+                    example: zodToJsonSchema(responseSchema),
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     },
-    coinbase,
+    new x402ResourceServer(
+      new HTTPFacilitatorClient({
+        url: facilitatorUrl,
+      }),
+    )
+      .register("eip155:*", new ExactEvmScheme()),
   ),
 );
 
-// Serve static files from public directory
-app.use('/favicon.ico', serveStatic({ path: './public/favicon.ico' }));
-app.use('/og-image.png', serveStatic({ path: './public/og-image.png' }));
+app.get("/.well-known/x402", c => {
+  return c.json({
+    version: 1,
+    resources: ["GET /best-move"],
+  });
+});
+
+app.get("/openapi.json", c => {
+  const host = c.req.header("host") || "localhost:4021";
+  const protocol = host.includes("localhost") ? "http" : "https";
+  const serverUrl = `${protocol}://${host}`;
+  const inputJsonSchema = z.toJSONSchema(inputSchema);
+  const outputJsonSchema = z.toJSONSchema(responseSchema);
+
+  return c.json({
+    openapi: "3.1.0",
+    info: {
+      title: "Chess Best Move x402 API",
+      version: "1.0.0",
+      description: "Paid Stockfish analysis endpoint.",
+      guidance:
+        "GET /best-move?fen=<FEN>&depth=<DEPTH> returns Stockfish analysis for the given position. `fen` is required (standard FEN string, URL-encoded). `depth` is optional (integer, default 10). Without a valid x402 payment header the server returns 402 with payment instructions. Include the PAYMENT-SIGNATURE header and retry to receive the analysis JSON.",
+    },
+    extensions: {
+      bazaar: {
+        schema: {
+          properties: {
+            input: {
+              properties: {
+                queryParams: inputJsonSchema,
+              },
+            },
+            output: {
+              properties: {
+                example: outputJsonSchema,
+              },
+            },
+          },
+        },
+      },
+    },
+    servers: [{ url: serverUrl }],
+    paths: {
+      "/best-move": {
+        get: {
+          operationId: "getBestMove",
+          summary: "Get best move for a chess position",
+          description: "Returns Stockfish analysis (evaluation, best move, mate info) for a provided chess FEN.",
+          "x-payment-info": {
+            protocols: ["x402"],
+            pricingMode: "fixed",
+            price: "$0.001",
+          },
+          extensions: {
+            bazaar: {
+              schema: {
+                properties: {
+                  input: {
+                    properties: {
+                      queryParams: inputJsonSchema,
+                    },
+                  },
+                  output: {
+                    properties: {
+                      example: outputJsonSchema,
+                    },
+                  },
+                },
+              },
+            },
+          },
+          parameters: [
+            {
+              name: "fen",
+              in: "query",
+              required: true,
+              description: "FEN string representing the chess position",
+              schema: { type: "string" },
+            },
+            {
+              name: "depth",
+              in: "query",
+              required: false,
+              description: "Analysis depth (default: 10)",
+              schema: { type: "string", default: "10" },
+            },
+          ],
+          responses: {
+            "200": {
+              description: "Successful analysis",
+              content: {
+                "application/json": {
+                  schema: outputJsonSchema,
+                },
+              },
+            },
+            "402": {
+              description: "Payment Required",
+            },
+          },
+        },
+      },
+    },
+  });
+});
 
 // https://stockfish.online/api/s/v2.php
 app.get("/best-move",
@@ -67,7 +208,7 @@ app.get("/best-move",
     z.object({
       fen: z.string(),
       depth: z.string().optional().default("10"),
-    })
+    }),
   ),
   async c => {
     try {
@@ -205,7 +346,4 @@ app.get("/", c => {
   `);
 });
 
-export default {
-  fetch: app.fetch,
-  port: 4021,
-}
+export default app;
