@@ -4,41 +4,36 @@ import { HTTPFacilitatorClient } from "@x402/core/server";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
-import { inputSchemaToX402, zodToJsonSchema } from "./lib/schema";
 
-function normalizeNetwork(value: string | undefined): `${string}:${string}` {
-  if (!value) throw new Error("NETWORK env var is required");
+const app = new Hono();
+
+function normalizeNetwork(value: string | undefined): `${string}:${string}` | undefined {
+  if (!value) return undefined;
   if (value.includes(":")) return value as `${string}:${string}`;
   if (value === "base-sepolia") return "eip155:84532";
   if (value === "base-mainnet") return "eip155:8453";
-  throw new Error(`Unsupported NETWORK value: ${value}`);
+  return undefined;
 }
 
 const facilitatorUrl = process.env.FACILITATOR_URL;
 const payTo = process.env.ADDRESS as `0x${string}`;
-
-if (!facilitatorUrl) throw new Error("FACILITATOR_URL env var is required");
-if (!payTo) throw new Error("ADDRESS env var is required");
-
 const network = normalizeNetwork(process.env.NETWORK);
 
+if (!facilitatorUrl || !payTo || !network) {
+  console.error("Missing required environment variables: FACILITATOR_URL, ADDRESS, NETWORK");
+}
 
 const inputSchema = z.object({
   fen: z.string(),
   depth: z.number().optional().default(10),
 });
 
-// Validate the response data with zod
 const responseSchema = z.object({
   success: z.literal(true),
   evaluation: z.number(),
   bestmove: z.string(),
   mate: z.number().nullable(),
 });
-
-const app = new Hono();
-
-console.log("Server is running");
 
 app.use(
   paymentMiddleware(
@@ -48,40 +43,17 @@ app.use(
           {
             scheme: "exact",
             price: "$0.001",
-            network,
+            network: network!,
             payTo,
           },
         ],
         description: "Get stockfish analysis for a given FEN",
         mimeType: "application/json",
-        extensions: {
-          bazaar: {
-            discoverable: true,
-            category: "utilities",
-            tags: ["chess", "stockfish", "analysis"],
-            inputSchema: inputSchemaToX402(inputSchema),
-            outputSchema: zodToJsonSchema(responseSchema),
-            schema: {
-              properties: {
-                input: {
-                  properties: {
-                    queryParams: zodToJsonSchema(inputSchema),
-                  },
-                },
-                output: {
-                  properties: {
-                    example: zodToJsonSchema(responseSchema),
-                  },
-                },
-              },
-            },
-          },
-        },
       },
     },
     new x402ResourceServer(
       new HTTPFacilitatorClient({
-        url: facilitatorUrl,
+        url: facilitatorUrl!,
       }),
     )
       .register("eip155:*", new ExactEvmScheme()),
