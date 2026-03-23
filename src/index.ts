@@ -1,27 +1,31 @@
 import { Hono } from "hono";
 import { paymentMiddleware, x402ResourceServer } from "@x402/hono";
 import { HTTPFacilitatorClient } from "@x402/core/server";
+import { createFacilitatorConfig } from "@coinbase/x402";
+import { createPaywall } from "@x402/paywall";
+import { evmPaywall } from "@x402/paywall/evm";
 import { ExactEvmScheme } from "@x402/evm/exact/server";
 import { zValidator } from '@hono/zod-validator'
 import * as z from 'zod'
 
 const app = new Hono();
 
-function normalizeNetwork(value: string | undefined): `${string}:${string}` | undefined {
-  if (!value) return undefined;
-  if (value.includes(":")) return value as `${string}:${string}`;
-  if (value === "base-sepolia") return "eip155:84532";
-  if (value === "base-mainnet") return "eip155:8453";
-  return undefined;
-}
-
-const facilitatorUrl = process.env.FACILITATOR_URL;
 const payTo = process.env.ADDRESS as `0x${string}`;
-const network = normalizeNetwork(process.env.NETWORK);
 
-if (!facilitatorUrl || !payTo || !network) {
-  console.error("Missing required environment variables: FACILITATOR_URL, ADDRESS, NETWORK");
+if (!payTo) {
+  throw new Error("Missing required environment variable: ADDRESS");
 }
+
+const facilitator = new HTTPFacilitatorClient(createFacilitatorConfig());
+
+const resourceServer = new x402ResourceServer(facilitator)
+  .register("eip155:8453", new ExactEvmScheme());
+
+const paywall = createPaywall()
+  .withNetwork(evmPaywall)
+  .withConfig({ appName: "Chess Best Move x402 API" })
+  .build();
+
 
 const inputSchema = z.object({
   fen: z.string(),
@@ -43,7 +47,7 @@ app.use(
           {
             scheme: "exact",
             price: "$0.001",
-            network: network!,
+            network: "eip155:8453",
             payTo,
           },
         ],
@@ -51,12 +55,9 @@ app.use(
         mimeType: "application/json",
       },
     },
-    new x402ResourceServer(
-      new HTTPFacilitatorClient({
-        url: facilitatorUrl!,
-      }),
-    )
-      .register("eip155:*", new ExactEvmScheme()),
+    resourceServer,
+    undefined,
+    paywall,
   ),
 );
 
