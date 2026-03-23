@@ -35,9 +35,9 @@ const inputSchema = z.object({
 
 const responseSchema = z.object({
   success: z.literal(true),
-  evaluation: z.number(),
+  evaluation: z.number().nullable(),
   bestmove: z.string(),
-  mate: z.number().nullable(),
+  mate: z.union([z.number(), z.string().transform(Number)]).nullable(),
 });
 
 app.use(
